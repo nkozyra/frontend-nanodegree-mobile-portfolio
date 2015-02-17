@@ -16,6 +16,11 @@ Cameron Pittman, Udacity Course Developer
 cameron *at* udacity *dot* com
 */
 
+
+//	Eschew redefining an items variable on each update
+var MovingItems;
+var halfWinWidth = window.innerWidth / 2;
+
 // As you may have realized, this website randomly generates pizzas.
 // Here are arrays of all possible pizza ingredients.
 var pizzaIngredients = {};
@@ -498,14 +503,26 @@ function logAverageFrame(times) {   // times is the array of User Timing measure
 // https://www.igvita.com/slides/2012/devtools-tips-and-tricks/jank-demo.html
 
 // Moves the sliding background pizzas based on scroll position
+
+/*
+	CHANGED: No more left style, reducing calculations in loop
+	GOAL: We're skipping the left css notation in lieu of transform, which allows rendering to be done by the GPU
+*/
 function updatePositions() {
   frame++;
   window.performance.mark("mark_start_frame");
 
-  var items = document.querySelectorAll('.mover');
-  for (var i = 0; i < items.length; i++) {
+  if (!MovingItems) {
+	MovingItems = document.querySelectorAll('#movingPizzas1 img');
+  }
+  var newVal = 0;
+  for (var i = 0; i < MovingItems.length; i++) {
     var phase = Math.sin((document.body.scrollTop / 1250) + (i % 5));
-    items[i].style.left = items[i].basicLeft + 100 * phase + 'px';
+	
+	//	Minor change to calculation of translate3d versus style.left
+	newVal = ( ( halfWinWidth - (MovingItems[i].basicLeft) + 100 * phase ) ) + 'px';	
+	MovingItems[i].style.transform = 'translate3d(' + newVal + ',0,0)';
+	
   }
 
   // User Timing API to the rescue again. Seriously, it's worth learning.
@@ -518,9 +535,23 @@ function updatePositions() {
   }
 }
 
-// runs updatePositions on scroll
-window.addEventListener('scroll', updatePositions);
+/*
+	CHANGED: added a requestAnimationFrame wrapper
+	GOAL: give browser opportunity to manage frames
+*/
 
+function scrollHandler() {
+	window.requestAnimationFrame(updatePositions);
+}
+
+// runs updatePositions on scroll
+window.addEventListener('scroll', scrollHandler);
+
+
+/*
+	CHANGED: resized image to exact dimensions
+	GOAL Reduces browser's need to resize when repainting
+*/
 // Generates the sliding pizzas when the page loads.
 document.addEventListener('DOMContentLoaded', function() {
   var cols = 8;
@@ -528,9 +559,9 @@ document.addEventListener('DOMContentLoaded', function() {
   for (var i = 0; i < 200; i++) {
     var elem = document.createElement('img');
     elem.className = 'mover';
-    elem.src = "images/pizza.png";
+    elem.src = "images/pizza-noresize.png";
     elem.style.height = "100px";
-    elem.style.width = "73.333px";
+    elem.style.width = "73px";
     elem.basicLeft = (i % cols) * s;
     elem.style.top = (Math.floor(i / cols) * s) + 'px';
     document.querySelector("#movingPizzas1").appendChild(elem);
