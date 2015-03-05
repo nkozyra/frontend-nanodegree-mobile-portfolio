@@ -453,12 +453,16 @@ var resizePizzas = function(size) {
     return dx;
   }
 
+// CHANGE: Move redundant computation out of loop
   // Iterates through pizza elements on the page and changes their widths
+  var dx = 0;
+  var newwidth = 0;
   function changePizzaSizes(size) {
-    for (var i = 0; i < document.querySelectorAll(".randomPizzaContainer").length; i++) {
-      var dx = determineDx(document.querySelectorAll(".randomPizzaContainer")[i], size);
-      var newwidth = (document.querySelectorAll(".randomPizzaContainer")[i].offsetWidth + dx) + 'px';
-      document.querySelectorAll(".randomPizzaContainer")[i].style.width = newwidth;
+	pizzaContainer = document.querySelectorAll(".randomPizzaContainer");
+      dx = determineDx(pizzaContainer[0], size);
+      newwidth = (pizzaContainer[0].offsetWidth + dx) + 'px';	
+    for (var i = 0; i < pizzaContainer.length; i++) {
+	  pizzaContainer[i].style.width = newwidth;
     }
   }
 
@@ -516,8 +520,10 @@ function updatePositions() {
 	MovingItems = document.querySelectorAll('#movingPizzas1 img');
   }
   var newVal = 0;
+  var phase;
+  var scrollTop = document.body.scrollTop;
   for (var i = 0; i < MovingItems.length; i++) {
-    var phase = Math.sin((document.body.scrollTop / 1250) + (i % 5));
+    phase = Math.sin((scrollTop / 1250) + (i % 5));
 	
 	//	Minor change to calculation of translate3d versus style.left
 	newVal = ( ( halfWinWidth - (MovingItems[i].basicLeft) + 100 * phase ) ) + 'px';	
